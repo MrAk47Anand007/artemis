@@ -58,6 +58,8 @@ async def mobile_observe(device_serial: str | None = None) -> dict[str, Any]:
         session = _registry.get_or_create(device_serial)
     except DeviceBusyError as e:
         return {"status": "error", "error": str(e)}
+    except Exception as e:
+        return {"status": "error", "error": f"Failed to initialize/lock Android device controller: {e}"}
 
     try:
         action_session = await session.executor._session_or_start()
@@ -68,8 +70,12 @@ async def mobile_observe(device_serial: str | None = None) -> dict[str, Any]:
     if not obs.ok:
         return {"status": "error", "error": obs.message}
 
-    session.indexed_elements = obs.elements
-    session.indexed_points = [el["center"] for el in obs.elements]
+    # obs.hierarchy_ok is False when the screenshot succeeded but the UI
+    # hierarchy parse failed; the previous element index must survive that so
+    # a later click-by-index against last-known-good elements still resolves.
+    if obs.hierarchy_ok:
+        session.indexed_elements = obs.elements
+        session.indexed_points = [el["center"] for el in obs.elements]
     session.latest_screenshot = obs.screenshot_path
 
     return {
@@ -118,6 +124,8 @@ async def mobile_act(
         session = _registry.get_or_create(device_serial)
     except DeviceBusyError as e:
         return {"status": "error", "error": str(e)}
+    except Exception as e:
+        return {"status": "error", "error": f"Failed to initialize/lock Android device controller: {e}"}
 
     result = await session.executor.execute(
         action,
