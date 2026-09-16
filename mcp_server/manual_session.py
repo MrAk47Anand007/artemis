@@ -127,8 +127,7 @@ class ManualSessionRegistry:
             lock.acquire(blocking=False)
         except DeviceBusyError as exc:
             raise DeviceBusyError(
-                f"Device '{key}' is busy with another Artemis task or manual "
-                f"session: {exc}"
+                f"Device '{key}' is busy with another Artemis task or manual session: {exc}"
             ) from exc
 
         executor = self._executor_factory(device_serial)

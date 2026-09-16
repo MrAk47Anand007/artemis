@@ -75,9 +75,7 @@ async def test_mobile_act_click_by_index_after_observe():
     session = manual_mode._registry.get_or_create("dev1")
     _seed_indexed_element(session)
 
-    result = await manual_mode.mobile_act(
-        action="click", args={"target": 1}, device_serial="dev1"
-    )
+    result = await manual_mode.mobile_act(action="click", args={"target": 1}, device_serial="dev1")
     assert result["status"] == "success"
     assert result["device_serial"] == "dev1"
 
