@@ -118,8 +118,16 @@ class LocalRunner:
     def _build_messages(
         self, elements_text: str | None, img_bytes: bytes | None, history: list[TurnRecord]
     ) -> list[dict]:
+        # Folded into the user message rather than sent as a separate
+        # role="system" message: manual on-device verification found the
+        # Gallery server's local API doesn't surface a system message's
+        # content to the model as an instruction (the model treated it as
+        # something to acknowledge, not follow -- confirmed by direct
+        # curl tests against /v1/chat/completions). A workaround on this
+        # side, not a fix to the Gallery server itself.
         system_prompt = build_system_prompt(self.goal, _ALLOWED_ACTIONS)
         content: list[dict] = [
+            {"type": "text", "text": system_prompt},
             {"type": "text", "text": build_turn_history_text(history)},
         ]
         if img_bytes:
@@ -129,10 +137,7 @@ class LocalRunner:
             )
         if elements_text:
             content.append({"type": "text", "text": elements_text})
-        return [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": content},
-        ]
+        return [{"role": "user", "content": content}]
 
     async def run(self, state=None) -> dict:
         """Runs the reactive loop to completion; returns a Flash-shaped result dict."""
