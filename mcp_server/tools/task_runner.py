@@ -233,6 +233,14 @@ def mobile_run_task(
       monitoring/polling; tasks needing ADB shell, system logs, verified
       checkpoints, multi-step planning, or detailed written output (via notes
       and `expected_output_desc`).
+    - **Local**: same reactive loop shape as Flash, but backed by a free
+      on-device model served by the Google AI Edge Gallery app's local API
+      server instead of a paid LLM. No Artemis LLM credential required.
+      Requires the Gallery app's "Expose local API server" setting to be on
+      and reachable at the address configured in `artemis.jsonc`'s
+      `local_model` block. Same limitations as Flash (no ADB shell, no
+      persistent plan/notes, no verification/report) plus a smaller model
+      context window — best for simple, short tasks.
 
     Timing is not precise: the agent's own inference adds ~5 s per step (Flash)
     or ~30 s per turn (Pro) on top of any requested waits — account for this
@@ -279,9 +287,9 @@ def mobile_run_task(
           Ignored for Flash.
     """
     # 0. Validate and normalize model
-    if model.lower() not in ("flash", "pro"):
-        raise ValueError(f"Invalid model '{model}'. Must be either 'Flash' or 'Pro'.")
-    canonical_model = "Flash" if model.lower() == "flash" else "Pro"
+    if model.lower() not in ("flash", "pro", "local"):
+        raise ValueError(f"Invalid model '{model}'. Must be 'Flash', 'Pro', or 'Local'.")
+    canonical_model = {"flash": "Flash", "pro": "Pro", "local": "Local"}[model.lower()]
     # 0b. Validate the Pro tuning knobs before any trace exists so a typo is a
     # plain tool error rather than a failed trace on disk.
     verification_level, explorer_mode = _normalize_pro_tuning(verification_level, explorer_mode)
@@ -317,7 +325,9 @@ def mobile_run_task(
                     goal=task_desc,
                     profile=canonical_model.lower(),
                     device_serial=device_serial,
-                    expected_output=expected_output_desc if canonical_model != "Flash" else None,
+                    expected_output=(
+                        expected_output_desc if canonical_model not in ("Flash", "Local") else None
+                    ),
                     locked_app_package=locked_app_package,
                     app_path=app_path,
                     session_id=trace_id,
@@ -463,7 +473,7 @@ def mobile_run_task(
             cmd.extend(["--locked-app-package", locked_app_package])
         if app_path:
             cmd.extend(["--app-path", app_path])
-        if expected_output_desc and canonical_model != "Flash":
+        if expected_output_desc and canonical_model not in ("Flash", "Local"):
             cmd.extend(["--expected-output-desc", expected_output_desc])
         if device_serial:
             cmd.extend(["--device-serial", device_serial])
@@ -531,7 +541,7 @@ def mobile_run_task(
             "stdout_log": stdout_log_path,
             "stderr_log": stderr_log_path,
         }
-        if canonical_model != "Flash":
+        if canonical_model not in ("Flash", "Local"):
             response_dict["notes_dir"] = os.path.join(trace_dir, "notes")
 
         return response_dict

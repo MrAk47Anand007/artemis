@@ -205,11 +205,21 @@ async def run_task(
             trace_store.update_trace_device_serial(trace_id, target_serial)
 
         print("Initializing Artemis Agent...")
-        from artemis.config import initialize_llm_config, settings
+        from artemis.config import get_default_llm_config, initialize_llm_config, settings
 
         profile_file = resolve_profile_file()
         if profile_file:
             profile = AgentProfile(name="default", from_file=profile_file)
+        elif model.lower() == "local":
+            # LocalRunner (artemis.agents.local.runner) never touches
+            # LLMConfig at all -- it talks to the Gallery server directly.
+            # Validating credentials for every other node (planner, operator,
+            # checker, ...) here would block exactly the setup this profile
+            # exists for: no paid LLM key configured anywhere. Same
+            # parse-without-validate behavior the profile_file branch above
+            # already has (load_llm_config_override never calls
+            # validate_providers() either).
+            profile = AgentProfile(name="default", llm_config=get_default_llm_config())
         else:
             profile = AgentProfile(name="default", llm_config=initialize_llm_config())
 
@@ -226,7 +236,11 @@ async def run_task(
 
             config_builder.for_device(DevicePlatform.ANDROID, target_serial)
 
-        config = config_builder.build()
+        # AgentConfigBuilder.build() re-validates the default profile's
+        # credentials on its own (add_profile(..., validate=True) inside
+        # build(), independent of how `profile.llm_config` was constructed
+        # above) -- so the Local-profile skip above isn't enough by itself.
+        config = config_builder.build(validate_profiles=model.lower() != "local")
 
         agent = Agent(config=config)
         await _initialize_agent(
@@ -256,8 +270,8 @@ async def run_task(
             task_builder.with_app_path(app_path=app_path)
         if expected_output_desc:
             task_builder.with_output_description(description=expected_output_desc)
-        if model.lower() == "flash":
-            task_builder.using_profile("flash")
+        if model.lower() in ("flash", "local"):
+            task_builder.using_profile(model.lower())
 
         result = await agent.run_task(request=task_builder.build())
         print(f"Task completed. Result: {result}")
@@ -301,7 +315,7 @@ async def run_task(
             return
 
         if not result:
-            if model.lower() == "flash":
+            if model.lower() in ("flash", "local"):
                 result = "Task executed successfully."
             else:
                 result = (
@@ -416,7 +430,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Artemis Background Task Runner")
     parser.add_argument("--trace-id", required=True, help="Unique trace identifier")
     parser.add_argument("--task-desc", required=True, help="Description of the task to run")
-    parser.add_argument("--model", required=True, help="Model to use ('Flash' or 'Pro')")
+    parser.add_argument("--model", required=True, help="Model to use ('Flash', 'Pro', or 'Local')")
     parser.add_argument(
         "--conversation-id",
         default="",

@@ -22,7 +22,12 @@ from typing import Annotated
 
 from adbutils import AdbClient
 from langchain_core.callbacks.base import Callbacks
-from artemis.config import checker_overrides_for_level, initialize_llm_config, settings
+from artemis.config import (
+    checker_overrides_for_level,
+    get_default_llm_config,
+    initialize_llm_config,
+    settings,
+)
 from artemis.utils.startup_progress import publish_startup_progress
 from artemis import Agent, Builders
 from artemis.sdk.types.task import AgentProfile
@@ -93,7 +98,12 @@ async def execute_task(
         session_id=str(effective_sid) if effective_sid else None,
     )
 
-    llm_config = initialize_llm_config()
+    # The Local profile's LocalRunner (artemis.agents.local.runner) never
+    # touches LLMConfig at all -- it talks to the Gallery server directly --
+    # so validating every other node's credentials here would block exactly
+    # the setup Local exists for: no paid LLM key configured anywhere.
+    is_local_profile = bool(profile) and profile.lower() == "local"
+    llm_config = get_default_llm_config() if is_local_profile else initialize_llm_config()
     agent_profile = AgentProfile(name="default", llm_config=llm_config)
     config = Builders.AgentConfig.with_default_profile(profile=agent_profile)
 
@@ -156,7 +166,10 @@ async def execute_task(
 
     agent: Agent | None = None
     try:
-        agent = Agent(config=config.build(), session_id=effective_sid)
+        # AgentConfigBuilder.build() re-validates the default profile's
+        # credentials on its own, independent of how llm_config was built
+        # above -- so the Local-profile skip above isn't enough by itself.
+        agent = Agent(config=config.build(validate_profiles=not is_local_profile), session_id=effective_sid)
         await agent.init(
             retry_count=int(os.getenv("ARTEMIS_HEALTH_RETRIES", 5)),
             retry_wait_seconds=int(os.getenv("ARTEMIS_HEALTH_DELAY", 2)),
