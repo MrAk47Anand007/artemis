@@ -256,8 +256,8 @@ async def run_task(
             task_builder.with_app_path(app_path=app_path)
         if expected_output_desc:
             task_builder.with_output_description(description=expected_output_desc)
-        if model.lower() == "flash":
-            task_builder.using_profile("flash")
+        if model.lower() in ("flash", "local"):
+            task_builder.using_profile(model.lower())
 
         result = await agent.run_task(request=task_builder.build())
         print(f"Task completed. Result: {result}")
@@ -301,7 +301,7 @@ async def run_task(
             return
 
         if not result:
-            if model.lower() == "flash":
+            if model.lower() in ("flash", "local"):
                 result = "Task executed successfully."
             else:
                 result = (
@@ -416,7 +416,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Artemis Background Task Runner")
     parser.add_argument("--trace-id", required=True, help="Unique trace identifier")
     parser.add_argument("--task-desc", required=True, help="Description of the task to run")
-    parser.add_argument("--model", required=True, help="Model to use ('Flash' or 'Pro')")
+    parser.add_argument("--model", required=True, help="Model to use ('Flash', 'Pro', or 'Local')")
     parser.add_argument(
         "--conversation-id",
         default="",
