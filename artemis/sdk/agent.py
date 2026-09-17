@@ -530,6 +530,7 @@ class Agent:
                     "pro",
                     "ultra",
                     "default",
+                    "local",
                 ):
                     agent_profile = self._config.default_profile
                 else:
