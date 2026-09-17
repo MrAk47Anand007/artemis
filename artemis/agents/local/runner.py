@@ -150,7 +150,16 @@ class LocalRunner:
 
             if parsed is None:
                 consecutive_parse_failures += 1
-                logger.warning(f"LocalRunner turn {turn}: could not parse model reply")
+                # print(), not just logger.warning(): the background task
+                # runner redirects sys.stdout/sys.stderr to per-trace log
+                # files after loguru's sinks are already bound, so warnings
+                # logged through loguru alone can silently miss those files.
+                message = (
+                    f"LocalRunner turn {turn}: could not parse model reply. "
+                    f"Raw reply (first 500 chars): {reply_text[:500]!r}"
+                )
+                logger.warning(message)
+                print(message)
                 if consecutive_parse_failures >= _MAX_CONSECUTIVE_PARSE_FAILURES:
                     return {
                         "status": "failed",
