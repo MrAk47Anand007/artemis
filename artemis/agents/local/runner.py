@@ -75,13 +75,20 @@ class LocalRunner:
         self._observe_fn = observe_fn or self._default_observe
         self._call_model_fn = call_model_fn or self._default_call_model
         self._act_fn = act_fn or self._default_act
+        # Lazily created on first _default_observe call and reused for the
+        # whole run: McpActionExecutor.execute() resolves index-based click
+        # targets against state.indexed_elements, so observe and act must
+        # share the same State instance across turns, not a fresh one each
+        # time. Tests inject observe_fn/act_fn directly and never touch this.
+        self._state = None
 
     async def _default_observe(self) -> tuple[bytes | None, str | None]:
         from artemis.graph.state import State
 
-        state = State()
+        if self._state is None:
+            self._state = State.initial(self.goal)
         _, img_bytes, xml_list = await capture_screenshot_and_parse_ui(
-            self.ctx, state, self.controller
+            self.ctx, self._state, self.controller
         )
         return img_bytes, xml_list
 
@@ -100,7 +107,9 @@ class LocalRunner:
             return data["choices"][0]["message"]["content"]
 
     async def _default_act(self, action: str, args: dict) -> str:
-        result = await self.executor.execute(action, args, tool_call_id="local", state=None)
+        result = await self.executor.execute(
+            action, args, tool_call_id="local", state=self._state
+        )
         return result.text_summary
 
     def _build_messages(
