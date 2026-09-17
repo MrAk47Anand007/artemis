@@ -275,10 +275,70 @@ dispatch, and DataEngine step recording — is confirmed working end to end.
 What is not yet reliable is the small on-device model's UI-grounding
 judgment (picking a sensible next element without a plan) and its JSON
 reliability under `temperature: 0`, which offers no escape from a
-malformed reply once produced. Not fixed here — flagged as follow-up:
-retrying a parse failure with a nonzero temperature (or a brief corrective
-system nudge appended to the retry prompt) would very likely break the
-determinism that turned one bad turn into a guaranteed failure.
+malformed reply once produced.
+
+## Follow-up hardening and model comparison (2026-09-17/18)
+
+Three further rounds of hardening and testing followed the initial
+verification above, all on the same device.
+
+**Temperature-on-retry** (implemented): a parse failure now retries at
+`temperature: 0.4` instead of `0.0`, then resets to `0.0` on the next
+successful parse — directly targeting the observed failure mode where a
+malformed reply against an unchanged prompt repeated byte-for-byte on the
+single allowed retry, turning one bad generation into a guaranteed
+two-in-a-row failure. Unit-tested (`test_retry_after_parse_failure_uses_nonzero_temperature`).
+
+**Model comparison — `MobileActions-270M`** (not usable): the Gallery's
+model catalog includes a model fine-tuned specifically for device actions
+(`litert-community/functiongemma-270m-ft-mobile-actions`). Investigated as
+a possibly better fit than a general chat model. Two real Gallery-side
+bugs were found and fixed along the way (see the companion Gallery-repo
+spec/plan): the local API server hardcoded `supportImage`/`supportAudio`
+to `true` regardless of the served model's actual capabilities, so loading
+a text-only model like this one failed engine creation outright
+(`TF_LITE_VISION_ENCODER not found`, then `TF_LITE_AUDIO_ENCODER_HW not
+found`). Once fixed, the model loaded but refused every request
+("I am FunctionGemma, a model optimized for function calls. I can only
+assist with requests that require a function call.") — its fine-tuning
+expects real OpenAI-style `tools`/function-calling schema, which the
+Gallery server's `/v1/chat/completions` implementation does not parse or
+forward at all (confirmed: `ChatCompletionsModels.kt` has no `tools`
+field). Even with that added, the model would not help here: its function
+vocabulary is a fixed set of six OS-level intents (flashlight on/off,
+create contact, send email, show location on map, *launch* Wi-Fi settings,
+create calendar event) — no generic "click element N," and no "toggle
+Wi-Fi" function at all (`OpenWifiSettings` only launches the settings
+screen). **Conclusion: wrong tool for UI-navigation tasks; `Gemma-4-E2B-it`
+remains the right model for this profile.**
+
+**Model comparison — `Gemma-4-E4B-it`** (better grounding, same ceiling):
+the larger Gemma 4 variant (~4B params vs. E2B's ~2B, otherwise identical
+capabilities) was downloaded and tested against the same two-step goal
+("toggle Wi-Fi off, then back on"). Element-grounding was markedly better —
+it correctly identified and tapped the actual Wi-Fi toggle on every single
+turn across two separate runs (7 and 9 turns respectively), never wandering
+into wrong screens the way E2B did. However, it never completed the
+two-step goal in either run: it does not reliably track a simple binary
+toggle state across turns. A prompt revision (labeling the rendered history
+"ACTION HISTORY", explicit instructions to check it before deciding, and
+three worked examples showing step-1-done → step-2 → `done: true`)
+produced partial improvement — by turn 5 of the second run its own
+reasoning began referencing history correctly ("the history shows I have
+already clicked... I need to click it again to turn it back on") — but a
+third, longer run (9 turns) still ended stuck, with its own stated
+reasoning admitting the confusion: *"the history is a bit messy... I'll
+assume the last click was successful, or I need to click it again... given
+the ambiguity, I'll proceed with step 1."*
+
+**Final assessment:** further prompt engineering is unlikely to close this
+specific gap — it is a genuine reasoning ceiling (tracking a
+one-bit state across turns for a two-step task) shared by both on-device
+model sizes tested, not a wording problem. The Local profile's pipeline is
+fully verified reliable; single-step, unambiguous tasks should work well;
+multi-step tasks requiring the model to track its own progress are not
+currently reliable with any on-device model available in the Gallery app.
+Left as a known, documented limitation rather than chased further.
 
 ## Related but out of scope here
 
