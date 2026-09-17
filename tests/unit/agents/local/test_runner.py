@@ -100,6 +100,44 @@ async def test_fails_after_two_consecutive_bad_json_replies():
 
 
 @pytest.mark.asyncio
+async def test_retry_after_parse_failure_uses_nonzero_temperature():
+    # At temperature 0, a malformed reply against an unchanged prompt
+    # repeats byte-for-byte on retry (observed on-device); bumping the
+    # temperature on retry gives the decoder a chance to actually diverge.
+    replies = iter(
+        ["not json", '{"action": null, "args": {}, "done": true, "result": "ok"}']
+    )
+    temperatures_seen: list[float] = []
+    runner_box: list[LocalRunner] = []
+
+    async def fake_observe():
+        return b"fake-screenshot-bytes", "1: [Button] Wi-Fi toggle"
+
+    async def fake_call_model(messages):
+        temperatures_seen.append(runner_box[0]._temperature)
+        return next(replies)
+
+    async def fake_act(action, args):
+        return "success"
+
+    with patch("artemis.controllers.unified_controller.get_driver"):
+        runner = LocalRunner(
+            ctx=_fake_context(),
+            goal="Toggle Wi-Fi",
+            config=LocalModelConfig(),
+            observe_fn=fake_observe,
+            call_model_fn=fake_call_model,
+            act_fn=fake_act,
+        )
+    runner_box.append(runner)
+
+    result = await runner.run()
+
+    assert result["status"] == "completed"
+    assert temperatures_seen == [0.0, 0.4]
+
+
+@pytest.mark.asyncio
 async def test_fails_when_max_turns_exhausted():
     runner, acted = _make_runner(
         ['{"action": "press_key", "args": {"key": "back"}, "done": false}'] * 3,

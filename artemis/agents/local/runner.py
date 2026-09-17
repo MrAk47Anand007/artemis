@@ -81,6 +81,14 @@ class LocalRunner:
         # share the same State instance across turns, not a fresh one each
         # time. Tests inject observe_fn/act_fn directly and never touch this.
         self._state = None
+        # Bumped to a nonzero value by run() after a parse failure, then
+        # reset to 0 on the next successful parse. At temperature 0 a
+        # malformed reply repeats byte-for-byte on retry against an
+        # unchanged prompt (observed on-device: a stuck screen + a
+        # deterministic JSON glitch is a guaranteed two-in-a-row failure);
+        # a nonzero retry gives the decoder a chance to actually produce
+        # something different.
+        self._temperature = 0.0
 
     async def _default_observe(self) -> tuple[bytes | None, str | None]:
         from artemis.graph.state import State
@@ -103,7 +111,11 @@ class LocalRunner:
             response = await client.post(
                 f"{self.config.api_base}/chat/completions",
                 headers=headers,
-                json={"model": self.config.model, "messages": messages, "temperature": 0},
+                json={
+                    "model": self.config.model,
+                    "messages": messages,
+                    "temperature": self._temperature,
+                },
             )
             response.raise_for_status()
             data = response.json()
@@ -170,9 +182,11 @@ class LocalRunner:
                         "status": "failed",
                         "explanation": "Model returned non-JSON output twice in a row.",
                     }
+                self._temperature = 0.4
                 continue
 
             consecutive_parse_failures = 0
+            self._temperature = 0.0
 
             if parsed.done:
                 if self.ctx.data_engine:
