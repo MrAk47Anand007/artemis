@@ -20,7 +20,7 @@
 - Create: `artemis/config/local_model.py`
 - Test (new): `tests/unit/config/test_local_model.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/unit/config/test_local_model.py`:
 
@@ -101,12 +101,12 @@ def test_partial_override_keeps_other_defaults(tmp_path, monkeypatch):
     assert config.max_turns == 40
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `uv run pytest tests/unit/config/test_local_model.py -v`
 Expected: `ModuleNotFoundError: No module named 'artemis.config.local_model'`
 
-- [ ] **Step 3: Implement `LocalModelConfig`**
+- [x] **Step 3: Implement `LocalModelConfig`**
 
 Create `artemis/config/local_model.py`:
 
@@ -180,12 +180,12 @@ def parse_local_model_config() -> LocalModelConfig:
     return LocalModelConfig.model_validate(config_dict.get("local_model", {}))
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `uv run pytest tests/unit/config/test_local_model.py -v`
 Expected: 3 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add artemis/config/local_model.py tests/unit/config/test_local_model.py
@@ -202,7 +202,7 @@ git commit -m "feat(local): add LocalModelConfig loader for the Gallery endpoint
 - Test (new): `tests/unit/agents/local/__init__.py`
 - Test (new): `tests/unit/agents/local/test_reply_parser.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/unit/agents/local/__init__.py` (empty file).
 
@@ -268,12 +268,12 @@ def test_action_outside_allowed_vocabulary_returns_none():
     assert result is None
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `uv run pytest tests/unit/agents/local/test_reply_parser.py -v`
 Expected: `ModuleNotFoundError: No module named 'artemis.agents.local'`
 
-- [ ] **Step 3: Implement the parser**
+- [x] **Step 3: Implement the parser**
 
 Create `artemis/agents/local/__init__.py` (empty file).
 
@@ -365,12 +365,12 @@ def parse_model_reply(
     )
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `uv run pytest tests/unit/agents/local/test_reply_parser.py -v`
 Expected: 7 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add artemis/agents/local/__init__.py artemis/agents/local/reply_parser.py \
@@ -386,7 +386,7 @@ git commit -m "feat(local): add JSON reply parser for the Local profile's decisi
 - Create: `artemis/agents/local/prompt.py`
 - Test (new): `tests/unit/agents/local/test_prompt.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/unit/agents/local/test_prompt.py`:
 
@@ -445,12 +445,12 @@ def test_turn_history_caps_to_last_n_turns():
     assert "Turn 1:" not in text
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `uv run pytest tests/unit/agents/local/test_prompt.py -v`
 Expected: `ModuleNotFoundError: No module named 'artemis.agents.local.prompt'`
 
-- [ ] **Step 3: Implement the prompt builder**
+- [x] **Step 3: Implement the prompt builder**
 
 Create `artemis/agents/local/prompt.py`:
 
@@ -536,12 +536,12 @@ def build_turn_history_text(history: list[TurnRecord], max_turns: int = 8) -> st
     )
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `uv run pytest tests/unit/agents/local/test_prompt.py -v`
 Expected: 4 passed.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add artemis/agents/local/prompt.py tests/unit/agents/local/test_prompt.py
@@ -563,7 +563,7 @@ control flow — retry-on-bad-JSON, `done` handling, `max_turns` exhaustion —
 with fakes, no real device or network needed. Real-device behavior is
 verified manually in Task 8.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/unit/agents/local/test_runner.py`:
 
@@ -671,12 +671,12 @@ async def test_fails_when_max_turns_exhausted():
     assert len(acted) == 3
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `uv run pytest tests/unit/agents/local/test_runner.py -v`
 Expected: `ModuleNotFoundError: No module named 'artemis.agents.local.runner'`
 
-- [ ] **Step 3: Implement `LocalRunner`**
+- [x] **Step 3: Implement `LocalRunner`**
 
 Create `artemis/agents/local/runner.py`:
 
@@ -851,17 +851,17 @@ class LocalRunner:
         return {"status": "failed", "explanation": "Max turns reached without a final result."}
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `uv run pytest tests/unit/agents/local/test_runner.py -v`
 Expected: 4 passed.
 
-- [ ] **Step 5: Run the full local-profile unit test suite to check for regressions**
+- [x] **Step 5: Run the full local-profile unit test suite to check for regressions**
 
 Run: `uv run pytest tests/unit/agents/local/ tests/unit/config/test_local_model.py -v`
 Expected: all passed, no regressions.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add artemis/agents/local/runner.py tests/unit/agents/local/test_runner.py
@@ -875,7 +875,7 @@ git commit -m "feat(local): add LocalRunner reactive loop for the Gallery on-dev
 **Files:**
 - Modify: `artemis/sdk/agent.py:685` (see exact context below)
 
-- [ ] **Step 1: Add the import**
+- [x] **Step 1: Add the import**
 
 In `artemis/sdk/agent.py`, alongside the existing:
 
@@ -889,7 +889,7 @@ add:
 from artemis.agents.local.runner import LocalRunner
 ```
 
-- [ ] **Step 2: Add the `"local"` branch**
+- [x] **Step 2: Add the `"local"` branch**
 
 In `artemis/sdk/agent.py`, the current code (around line 685) reads:
 
@@ -976,12 +976,12 @@ Replace the `else:` on the last line with an `elif` for `"local"`, followed by t
 
 Note: `LocalRunner.run()` already calls `context.data_engine.end_session(...)` itself (Task 4), unlike the `FlashRunner` branch above which calls it here — this mirrors `LocalRunner` owning its own session lifecycle since it does not go through the same `flash_result`/`context.data_engine` coupling FlashRunner's call site assumes.
 
-- [ ] **Step 3: Verify the module still imports and existing tests pass**
+- [x] **Step 3: Verify the module still imports and existing tests pass**
 
 Run: `uv run pytest tests/unit/sdk/ -v`
 Expected: all passed, no regressions (this is a pure branch addition — no existing behavior changed for `"flash"`/other profiles).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add artemis/sdk/agent.py
@@ -995,7 +995,7 @@ git commit -m "feat(local): wire LocalRunner into Agent.run_task as the 'local' 
 **Files:**
 - Modify: `mcp_server/tools/task_runner.py`
 
-- [ ] **Step 1: Update model validation and the docstring**
+- [x] **Step 1: Update model validation and the docstring**
 
 In `mcp_server/tools/task_runner.py`, the current validation (inside `mobile_run_task`) reads:
 
@@ -1073,14 +1073,14 @@ Replace with:
                     ),
 ```
 
-- [ ] **Step 2: Run the existing MCP tool test suite**
+- [x] **Step 2: Run the existing MCP tool test suite**
 
 Run: `uv run pytest tests/unit/mcp/test_mcp_tools.py -v`
 Expected: all passed. If any test asserts the exact invalid-model error message
 (`"Must be either 'Flash' or 'Pro'"`), update it to match the new message
 (`"Must be 'Flash', 'Pro', or 'Local'."`) in that test file.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add mcp_server/tools/task_runner.py
@@ -1094,7 +1094,7 @@ git commit -m "feat(local): accept model=Local in mobile_run_task"
 **Files:**
 - Modify: `mcp_server/background/task_runner.py`
 
-- [ ] **Step 1: Update the profile selection**
+- [x] **Step 1: Update the profile selection**
 
 In `mcp_server/background/task_runner.py`'s `run_task`, the current code reads:
 
@@ -1148,12 +1148,12 @@ Replace with:
     parser.add_argument("--model", required=True, help="Model to use ('Flash', 'Pro', or 'Local')")
 ```
 
-- [ ] **Step 2: Verify the module still imports cleanly**
+- [x] **Step 2: Verify the module still imports cleanly**
 
 Run: `uv run python -c "import mcp_server.background.task_runner"`
 Expected: no output, exit code 0.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add mcp_server/background/task_runner.py
@@ -1171,57 +1171,115 @@ Prerequisite: the Gallery app's local API server (from
 `...-api-server-mode-design.md` in the `google-ai-edge-gallery` fork) must be
 running and reachable, with a model selected and loaded.
 
-- [ ] **Step 1: Point `artemis.jsonc` at the Gallery server**
+**Actually run 2026-09-17** on the same physical Xiaomi phone (`c24b2c3f`)
+used for the Gallery specs' own verification.
 
-Add (or confirm) a `local_model` block at the top level of `config/artemis.jsonc`:
+- [x] **Step 1: Point `artemis.jsonc` at the Gallery server**
+
+Added a `local_model` block to `config/artemis.jsonc`, api_base/token
+escaped with `\/` (the pre-existing, separately-tracked `strip_json_comments`
+bug that corrupts an unescaped `//` in a JSON string):
 
 ```jsonc
 "local_model": {
-  "api_base": "http://127.0.0.1:8080/v1",
-  "token": "<the token shown in the Gallery app's Settings>",
-  "model": "<the model name shown in Gallery Settings, e.g. Gemma-4-E2B-it>",
+  "api_base": "http:\/\/127.0.0.1:8080\/v1",
+  "token": "a2b11202-5536-413d-bc38-455c337cce0d",
+  "model": "Gemma-4-E2B-it",
   "max_turns": 40
 }
 ```
 
-(Use `adb forward tcp:8080 tcp:8080` if the phone is connected over USB and
-the server binds to the device's own loopback; use the phone's LAN IP in
-`api_base` instead if running over Wi-Fi.)
+Used `adb forward tcp:8080 tcp:8080` (USB connection) rather than a LAN IP.
 
-- [ ] **Step 2: Confirm the server responds directly**
+- [x] **Step 2: Confirm the server responds directly**
 
-Run: `curl -s http://127.0.0.1:8080/v1/models`
-Expected: `{"data":[{"id":"<model name>"}]}`.
+`adb shell curl -s http://127.0.0.1:8080/v1/models` →
+`{"data":[{"id":"Gemma-4-E2B-it"}]}`. Matches expected.
 
-- [ ] **Step 3: Run a simple task via `mobile_run_task`**
+- [x] **Step 3: Run a simple task via `mobile_run_task`**
 
-Call the `mobile_run_task` MCP tool with:
-- `task_desc`: `"Open Settings and toggle Wi-Fi off, then back on."`
-- `model`: `"Local"`
+Called `mobile_run_task(task_desc="Open Settings and toggle Wi-Fi off, then
+back on.", model="Local")`. This took **five attempts** before the first one
+that ran the actual reactive loop — see Steps 4-5 for what each attempt
+found and fixed (all fixes landed as their own commits alongside this plan,
+not deferred).
 
-Record the returned `trace_id`.
+- [x] **Step 4: Poll status until completion**
 
-- [ ] **Step 4: Poll status until completion**
+Attempts 1-4 each failed before `LocalRunner.run()` was ever reached, each
+exposing a genuine gap the design didn't anticipate:
 
-Call `mobile_manage_task(action="status", trace_id="<trace_id>")` every ~10
-seconds. Expected: `status` moves from `"running"` to `"completed"` (or
-`"failed"` with a legible `error`/`explanation` if the model's actions didn't
-land — capture that message for follow-up if so).
+1. `Exception: Planner requires GOOGLE_API_KEY in .env` — the standalone
+   runner's `initialize_llm_config()` validates every LLM node
+   unconditionally regardless of the requested profile. Fixed by skipping
+   validation (`get_default_llm_config()` instead) when `model.lower() ==
+   "local"`, in `mcp_server/background/task_runner.py`.
+2. Same error, still — `AgentConfigBuilder.build()` re-validates the
+   default profile on its own (`validate_profiles=True` default),
+   independent of how `llm_config` was constructed. Fixed by passing
+   `validate_profiles=(model.lower() != "local")`.
+3. Retried via the **daemon** dispatch path this time (daemon started
+   between attempts) and hit the *identical* two-gate problem again, in a
+   *third* file: `artemis/interfaces/cli/commands/run.py` — the daemon
+   spawns its own worker via `artemis.main run --profile <profile>`, a
+   completely separate code path from the standalone runner. Applied the
+   same two-part fix there.
+4. `AgentProfileNotFoundError: Agent profile local not found` — `Agent.
+   _run_task`'s profile-not-registered fallback only recognized
+   `flash`/`pro`/`ultra`/`default`. Added `local`.
+5. `pydantic_core.ValidationError: initial_goal Field required` —
+   `LocalRunner._default_observe` built a bare `State()` instead of using
+   the established `State.initial(goal)` factory, and wasn't sharing one
+   `State` instance across turns (needed for `McpActionExecutor` to
+   resolve index-based click targets). Fixed both.
 
-- [ ] **Step 5: Inspect the trace**
+Attempt 5 reached the actual reactive loop but hit `httpx.ReadTimeout` on
+turn 2 (on-device inference took over 60s) — raised the timeout to 180s.
+Attempt 6 ran the loop successfully but the model's replies were a
+bounding-box/OCR-style detection array (`{"box_2d": [...], "text_content":
+"..."}`), never the requested action JSON, and identically so on retry.
+Direct `curl` tests against `/v1/chat/completions` isolated the cause: the
+Gallery server does not surface a `role: "system"` message's content to
+the model as an instruction at all (confirmed: the identical instruction
+folded into a single `role: "user"` message was followed exactly, image
+included). Fixed by having `LocalRunner._build_messages` send one `user`
+message with the system prompt as its first text block — a workaround on
+the ARTEMIS side for a Gallery-server-side gap, not a fix to that server.
 
-Call `mobile_inspect_trace(action="view_summary", trace_id="<trace_id>")`.
-Expected: a normal step-by-step trace showing each action taken, the same
-shape Flash traces already produce.
+Attempt 7 (with the message-format fix) hit a real parser bug: a
+perfectly valid model reply, `{"action": "click", "args": {"target": 8}}`,
+was rejected because it omitted the `"done"` key, which `parse_model_reply`
+required. Fixed to default a missing `done` to `false`.
 
-- [ ] **Step 6: Record the outcome**
+Attempt 8, with all seven fixes in place, ran the full loop end to end:
+`status` moved from `"running"` to `"failed"` at 94.6s — a genuine model
+outcome, not a plumbing failure (see Step 5).
 
-Add a "Verified on-device" section to
-`docs/superpowers/specs/2026-09-17-local-runner-design.md` describing what
-happened (success, or the specific failure and root cause if the on-device
-model's output didn't parse reliably — this is the biggest real unknown in
-this design, since it depends on how well a small on-device model follows
-the JSON-only instruction).
+- [x] **Step 5: Inspect the trace**
+
+`mobile_inspect_trace(action="view_summary", ...)` on attempt 8 showed a
+normal, Flash-shaped step-by-step trace — **confirming the DataEngine
+integration works**:
+
+```
+Step 1: "...element 8 is 'Wi-Fi three bars.'... I will click it..." → Tapped element at 8
+Step 2: "...I see a Wi-Fi indicator at element 8. I will click it..." → Tapped element at 8
+Step 3: "...I will click on the 'Google AI Edge Gallery' element..." → Tapped element at 35
+```
+
+Three real device actions were dispatched and recorded. The run then
+failed on turn 5: the phone was on its home screen with no visible Settings
+affordance, the model's element-grounding guesses ran out, and at
+`temperature: 0` its next malformed-JSON reply (an extra premature closing
+brace) repeated byte-for-byte on the one allowed retry, hitting the
+two-consecutive-failure fail path deterministically.
+
+- [x] **Step 6: Record the outcome**
+
+Recorded in detail in the spec's new "Verified on-device" section
+(`docs/superpowers/specs/2026-09-17-local-runner-design.md`), including the
+follow-up recommendation (retry a parse failure with nonzero temperature or
+a corrective nudge, so a bad turn isn't a guaranteed repeat).
 
 ```bash
 git add docs/superpowers/specs/2026-09-17-local-runner-design.md
@@ -1249,9 +1307,20 @@ git commit -m "docs: record manual verification of the Local profile"
   `result`) from Task 2 are exactly what `LocalRunner.run()` reads in Task 4.
   `TurnRecord`'s fields (Task 3) match what `LocalRunner.run()` constructs
   and appends to `history` in Task 4.
-- **Known gap intentionally deferred:** the exact reliability of a small
-  on-device model at following the "respond with ONLY JSON" instruction is
-  unverified until Task 8 — this is called out explicitly there rather than
-  assumed. If Task 8 finds the model frequently wraps JSON in prose the
-  regex-based extraction in `reply_parser.py` can't handle, that is a
-  follow-up fix to `_extract_json_text`, not a redesign.
+- **Known gap, now resolved by measurement:** Task 8 found the model does
+  *not* reliably follow "respond with ONLY JSON" when the instruction is
+  sent as a `role: "system"` message and an image is present (the Gallery
+  server doesn't surface system-role content to the model at all) — fixed
+  by folding the instruction into the `user` message instead. What remains
+  genuinely open after that fix: the small model's UI-grounding judgment
+  (picking a sensible next element without a plan) and its JSON reliability
+  under `temperature: 0`, which offers no escape from a malformed reply once
+  produced. Not fixed in this plan; flagged as a follow-up in the spec.
+- **Real gaps found via Task 8, not anticipated in the design:** credential
+  validation existed at four independent call sites across two entirely
+  separate worker code paths (the standalone spawn *and* the daemon's CLI
+  worker), not the one this plan's Task 6/7 touched; `Agent._run_task`'s
+  profile allowlist needed `"local"` added; `LocalRunner`'s own `State`
+  handling was wrong; the HTTP timeout was too short; and the reply parser
+  was stricter than the schema needed. All are fixed and committed — see
+  Task 8 Step 4 for the full list with root causes.

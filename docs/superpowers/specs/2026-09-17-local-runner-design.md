@@ -1,7 +1,7 @@
 # mobile_run_task Local Profile: On-Device Model Runner
 
 Date: 2026-09-17
-Status: Design approved, not yet implemented
+Status: Implemented, verified on-device 2026-09-17 (see "Verified on-device" below)
 
 ## Problem
 
@@ -213,6 +213,72 @@ it and the plan will not depend on that entry existing.)
   against the already-verified Gallery server, poll via
   `mobile_manage_task(action="status")`, confirm the task completes and
   `mobile_inspect_trace` shows a normal step-by-step trace.
+
+## Verified on-device (2026-09-17)
+
+Ran on the same physical Xiaomi phone (`c24b2c3f`) used for the Gallery
+specs' own verification, against the already-working Gallery local API
+server (`Gemma-4-E2B-it`, port 8080).
+
+Five real device-serial requests were needed to reach a working state,
+each surfacing a genuine bug the design didn't anticipate, fixed in turn:
+
+1. **Credential validation blocked Local entirely**, at *two independent
+   gates* in *two independent code paths*: `initialize_llm_config()` and
+   `AgentConfigBuilder.build()`'s own `validate_profiles=True` default,
+   duplicated across both `mcp_server/background/task_runner.py` (the
+   standalone spawn fallback) and `artemis/interfaces/cli/commands/run.py`
+   (the daemon's own `artemis.main run` worker, a completely separate
+   process this design didn't know existed). All four call sites now skip
+   validation when the profile is `"local"`.
+2. `Agent._run_task`'s profile-not-registered fallback only recognized
+   `flash`/`pro`/`ultra`/`default`; added `local`.
+3. `LocalRunner._default_observe` built a bare `State()`, missing the
+   required `initial_goal` field, and wasn't sharing one `State` instance
+   across turns (needed for index-based click resolution). Fixed to use
+   `State.initial(goal)` and persist it for the whole run.
+4. The 60s HTTP timeout was too short for real on-device inference (one
+   turn took over a minute); raised to 180s.
+5. **The Gallery server does not surface a `role: "system"` message's
+   content to the model as an instruction** — confirmed by direct `curl`
+   tests against `/v1/chat/completions`: the identical instruction as a
+   `system` message was acknowledged-but-ignored (and, once an image
+   joined the conversation, the model degenerated into a repeated
+   `box_2d` object-detection loop regardless of prompt wording); the same
+   instruction folded into a single `role: "user"` message was followed
+   exactly, image included. `LocalRunner._build_messages` now sends one
+   `user` message with the system prompt as its first text block. This is
+   a workaround on the ARTEMIS side, not a fix to the Gallery server
+   itself.
+
+A sixth issue was a parser bug, not a device bug: `parse_model_reply`
+required an explicit `"done"` key and rejected an otherwise-perfectly-valid
+`{"action": "click", "args": {"target": 8}}` reply that simply omitted it.
+Fixed to default a missing `done` to `false`.
+
+With all six fixed, `mobile_run_task(model="Local", task_desc="Open
+Settings and toggle Wi-Fi off, then back on.")` ran end-to-end through the
+daemon dispatch path and **dispatched three real, correctly-recorded device
+actions** (`mobile_inspect_trace` showed the same step-by-step reasoning +
+action shape Flash traces produce). The run ultimately failed on turn 5:
+the phone was sitting on its home screen with no visible Settings
+affordance, so the model's element-grounding guesses ran out
+(`Wi-Fi three bars.` status-bar text, then the app's own branding text),
+and at `temperature: 0` its subsequent malformed-JSON reply
+(`{"action": "click", "args": {"target": 8} }, "thought": ...}` — an extra
+premature closing brace) repeated identically on retry, hitting the
+two-consecutive-failure fail path deterministically rather than by chance.
+
+**Assessment:** the full pipeline — config, credential/profile gates,
+daemon dispatch, device binding, the Gallery HTTP round-trip, action
+dispatch, and DataEngine step recording — is confirmed working end to end.
+What is not yet reliable is the small on-device model's UI-grounding
+judgment (picking a sensible next element without a plan) and its JSON
+reliability under `temperature: 0`, which offers no escape from a
+malformed reply once produced. Not fixed here — flagged as follow-up:
+retrying a parse failure with a nonzero temperature (or a brief corrective
+system nudge appended to the retry prompt) would very likely break the
+determinism that turned one bad turn into a guaranteed failure.
 
 ## Related but out of scope here
 
