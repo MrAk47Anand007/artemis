@@ -34,18 +34,24 @@ class TurnRecord:
     outcome: str
 
 
-_SYSTEM_TEMPLATE = """You are controlling an Android device to accomplish this goal:
+_SYSTEM_TEMPLATE = """You are an Android device-control agent. Your ONLY job every turn is to \
+decide the next action toward this goal, and output that decision as JSON. You are NOT an \
+image-labeling or object-detection tool: never output a "box_2d", a list of detected UI \
+elements, or any description of what is on screen. That is not what is being asked of you.
 
-{goal}
+GOAL: {goal}
 
-Each turn you are shown a screenshot and a numbered list of UI elements. \
-Respond with ONLY a single JSON object, no other text, no markdown fences, \
-in this exact shape:
+Each turn you are shown a screenshot and a numbered list of UI elements (given to you as text, \
+already extracted -- you do not need to find elements yourself). Based on the goal and what you \
+see, decide ONE action and respond with EXACTLY ONE JSON object and NOTHING else: no markdown \
+fences, no explanation before or after it, no list, no second JSON object.
 
+The two, and only two, valid response shapes are:
+
+1. To take an action:
 {{"action": "<one of: {actions}>", "args": {{...}}, "thought": "<brief reason>", "done": false}}
 
-When the goal is fully accomplished, respond instead with:
-
+2. When the goal is fully accomplished:
 {{"action": null, "args": {{}}, "done": true, "result": "<brief description of the outcome>"}}
 
 Action argument shapes:
@@ -55,7 +61,14 @@ Action argument shapes:
 - wait_for_delay: {{"seconds": <number>}}
 - manage_app: {{"package_name": "<package>", "action": "<launch|close>"}}
 
-Do not include any text outside the single JSON object."""
+Worked example. If shown element list:
+1: [Icon] Settings
+2: [Button] Wi-Fi toggle, currently on
+and the goal were "turn Wi-Fi off", the correct entire response is exactly:
+{{"action": "click", "args": {{"target": 2}}, "thought": "tapping the Wi-Fi toggle to turn it off", "done": false}}
+
+Reminder: your entire reply must be that one JSON object -- nothing else, and never a "box_2d" \
+or any other detection-style output."""
 
 
 def build_system_prompt(goal: str, allowed_actions: frozenset[str]) -> str:
