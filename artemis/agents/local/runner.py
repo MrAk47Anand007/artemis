@@ -140,7 +140,7 @@ class LocalRunner:
         system_prompt = build_system_prompt(self.goal, _ALLOWED_ACTIONS)
         content: list[dict] = [
             {"type": "text", "text": system_prompt},
-            {"type": "text", "text": build_turn_history_text(history)},
+            {"type": "text", "text": f"ACTION HISTORY:\n{build_turn_history_text(history)}"},
         ]
         if img_bytes:
             img_b64 = base64.b64encode(img_bytes).decode("utf-8")

@@ -41,10 +41,19 @@ elements, or any description of what is on screen. That is not what is being ask
 
 GOAL: {goal}
 
-Each turn you are shown a screenshot and a numbered list of UI elements (given to you as text, \
-already extracted -- you do not need to find elements yourself). Based on the goal and what you \
-see, decide ONE action and respond with EXACTLY ONE JSON object and NOTHING else: no markdown \
-fences, no explanation before or after it, no list, no second JSON object.
+Each turn you are shown an ACTION HISTORY (what you have already done, oldest first), a \
+screenshot, and a numbered list of UI elements (given to you as text, already extracted -- you \
+do not need to find elements yourself).
+
+BEFORE deciding, read the ACTION HISTORY and check what step of the goal you have already \
+completed. Many goals have more than one step (e.g. "turn X off, then back on" is two steps: \
+first turn it off, then turn it on again). Do not repeat a step the history shows you already \
+did -- move on to the next unfinished step. Only respond with "done": true once EVERY step in \
+the goal has been completed according to the history, not after the first step.
+
+Based on the goal, the history, and what you currently see, decide ONE action and respond with \
+EXACTLY ONE JSON object and NOTHING else: no markdown fences, no explanation before or after \
+it, no list, no second JSON object.
 
 The two, and only two, valid response shapes are:
 
@@ -61,11 +70,25 @@ Action argument shapes:
 - wait_for_delay: {{"seconds": <number>}}
 - manage_app: {{"package_name": "<package>", "action": "<launch|close>"}}
 
-Worked example. If shown element list:
+Worked example 1 (first step of a goal). Goal: "turn Wi-Fi off, then back on". ACTION HISTORY: \
+"No actions taken yet." Element list:
 1: [Icon] Settings
 2: [Button] Wi-Fi toggle, currently on
-and the goal were "turn Wi-Fi off", the correct entire response is exactly:
-{{"action": "click", "args": {{"target": 2}}, "thought": "tapping the Wi-Fi toggle to turn it off", "done": false}}
+The correct entire response is exactly:
+{{"action": "click", "args": {{"target": 2}}, "thought": "step 1 of 2: tapping the Wi-Fi toggle to turn it off", "done": false}}
+
+Worked example 2 (recognizing a step is already done). Same goal, but ACTION HISTORY now reads: \
+"Turn 1: click({{'target': 2}}) -> success". Element list:
+1: [Icon] Settings
+2: [Button] Wi-Fi toggle, currently off
+The history shows you already turned Wi-Fi off (step 1). The correct response now moves to step \
+2 (turning it back on), NOT another click on the same "off" state:
+{{"action": "click", "args": {{"target": 2}}, "thought": "step 2 of 2: Wi-Fi is already off per the history, tapping again to turn it back on", "done": false}}
+
+Worked example 3 (finishing). If the ACTION HISTORY next showed that second click also \
+succeeded and the element list now shows the toggle "currently on" again, both steps are done, \
+so the correct response is:
+{{"action": null, "args": {{}}, "done": true, "result": "Wi-Fi was turned off then back on"}}
 
 Reminder: your entire reply must be that one JSON object -- nothing else, and never a "box_2d" \
 or any other detection-style output."""
