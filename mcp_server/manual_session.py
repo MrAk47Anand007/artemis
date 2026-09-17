@@ -137,5 +137,6 @@ class ManualSessionRegistry:
 
     def end(self, device_serial: str | None) -> bool:
         """Releases the device lock and drops the session. Idempotent."""
+        ended = self._end_key(self._key(device_serial))
         self._reap_idle()
-        return self._end_key(self._key(device_serial))
+        return ended

@@ -91,6 +91,16 @@ def test_end_on_unknown_device_is_not_an_error():
     assert registry.end("never-created") is False
 
 
+def test_end_reports_true_when_the_call_itself_reaped_an_idle_session():
+    # Regression: end() must not let its own _reap_idle() pass reap the
+    # requested session before _end_key() runs, or the caller sees `ended:
+    # false` for the exact call that released the device (google/artemis#114).
+    factory = _fake_executor_factory()
+    registry = ManualSessionRegistry(executor_factory=factory, idle_timeout_s=0.0)
+    registry.get_or_create("dev-stale")
+    assert registry.end("dev-stale") is True
+
+
 def test_idle_session_is_reaped_on_next_registry_access():
     factory = _fake_executor_factory()
     registry = ManualSessionRegistry(executor_factory=factory, idle_timeout_s=0.0)
