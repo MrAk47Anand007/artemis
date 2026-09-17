@@ -96,7 +96,10 @@ class LocalRunner:
         headers = {}
         if self.config.token:
             headers["Authorization"] = f"Bearer {self.config.token}"
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        # On-device inference latency is much more variable than a cloud LLM's
+        # (observed 60s+ on a mid-range phone under load during manual
+        # verification) -- a generous timeout here, not a network one.
+        async with httpx.AsyncClient(timeout=180.0) as client:
             response = await client.post(
                 f"{self.config.api_base}/chat/completions",
                 headers=headers,
