@@ -54,9 +54,13 @@ def parse_model_reply(
     """Parses ``text`` into a :class:`ParsedAction`, or ``None`` if it can't be.
 
     Returns ``None`` (rather than raising) on any of: no JSON object found,
-    invalid JSON, missing the required ``done`` field, or (when
-    ``allowed_actions`` is given) an ``action`` outside that vocabulary --
-    the caller treats all of these as one uniform "bad reply, retry" case.
+    invalid JSON, an object with neither ``action`` nor ``done: true`` (not
+    this schema at all -- e.g. a detection-style ``box_2d`` array), or
+    (when ``allowed_actions`` is given) an ``action`` outside that
+    vocabulary -- the caller treats all of these as one uniform "bad
+    reply, retry" case. A missing ``done`` key defaults to ``False``: small
+    models often omit it on an ordinary action turn rather than typing it
+    out explicitly, and that omission is not a sign of a malformed reply.
     """
     json_text = _extract_json_text(text)
     if json_text is None:
@@ -67,10 +71,13 @@ def parse_model_reply(
     except json.JSONDecodeError:
         return None
 
-    if not isinstance(parsed, dict) or "done" not in parsed:
+    if not isinstance(parsed, dict):
         return None
 
     action = parsed.get("action")
+    done = bool(parsed.get("done", False))
+    if action is None and not done:
+        return None
     if allowed_actions is not None and action is not None and action not in allowed_actions:
         return None
 
@@ -78,6 +85,6 @@ def parse_model_reply(
         action=action,
         args=parsed.get("args") or {},
         thought=parsed.get("thought"),
-        done=bool(parsed["done"]),
+        done=done,
         result=parsed.get("result"),
     )

@@ -49,6 +49,13 @@ def test_json_missing_required_fields_returns_none():
     assert parse_model_reply('{"foo": "bar"}') is None
 
 
+def test_missing_done_key_defaults_to_false():
+    result = parse_model_reply('{"action": "click", "args": {"target": 8}}')
+    assert result == ParsedAction(
+        action="click", args={"target": 8}, thought=None, done=False, result=None
+    )
+
+
 def test_action_outside_allowed_vocabulary_returns_none():
     result = parse_model_reply(
         '{"action": "ask_explorer", "args": {}, "done": false}',
