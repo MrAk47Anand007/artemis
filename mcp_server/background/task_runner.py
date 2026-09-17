@@ -236,7 +236,11 @@ async def run_task(
 
             config_builder.for_device(DevicePlatform.ANDROID, target_serial)
 
-        config = config_builder.build()
+        # AgentConfigBuilder.build() re-validates the default profile's
+        # credentials on its own (add_profile(..., validate=True) inside
+        # build(), independent of how `profile.llm_config` was constructed
+        # above) -- so the Local-profile skip above isn't enough by itself.
+        config = config_builder.build(validate_profiles=model.lower() != "local")
 
         agent = Agent(config=config)
         await _initialize_agent(
