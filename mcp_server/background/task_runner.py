@@ -205,11 +205,21 @@ async def run_task(
             trace_store.update_trace_device_serial(trace_id, target_serial)
 
         print("Initializing Artemis Agent...")
-        from artemis.config import initialize_llm_config, settings
+        from artemis.config import get_default_llm_config, initialize_llm_config, settings
 
         profile_file = resolve_profile_file()
         if profile_file:
             profile = AgentProfile(name="default", from_file=profile_file)
+        elif model.lower() == "local":
+            # LocalRunner (artemis.agents.local.runner) never touches
+            # LLMConfig at all -- it talks to the Gallery server directly.
+            # Validating credentials for every other node (planner, operator,
+            # checker, ...) here would block exactly the setup this profile
+            # exists for: no paid LLM key configured anywhere. Same
+            # parse-without-validate behavior the profile_file branch above
+            # already has (load_llm_config_override never calls
+            # validate_providers() either).
+            profile = AgentProfile(name="default", llm_config=get_default_llm_config())
         else:
             profile = AgentProfile(name="default", llm_config=initialize_llm_config())
 
