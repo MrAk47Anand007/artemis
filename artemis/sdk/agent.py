@@ -44,6 +44,7 @@ from PIL import Image
 from pydantic import BaseModel
 
 from artemis.agents.flash.runner import FlashRunner
+from artemis.agents.local.runner import LocalRunner
 from artemis.agents.outputter.outputter import outputter
 from artemis.clients.screen_client_factory import (
     ScreenClient,
@@ -720,6 +721,37 @@ class Agent:
                                 )
                                 if context.data_engine:
                                     context.data_engine.end_session("failed")
+                            return output
+                        elif request.profile and request.profile.lower() == "local":
+                            logger.info(f"[{task_name}] Invoking LocalRunner reactive loop...")
+                            await task.set_status(
+                                status="running",
+                                message="Invoking LocalRunner...",
+                            )
+
+                            max_turns = (
+                                request.max_steps if request.max_steps != RECURSION_LIMIT else None
+                            )
+                            runner = LocalRunner(context, goal=request.goal, max_turns=max_turns)
+                            local_result = await runner.run(state)
+
+                            output = local_result
+                            last_state_snapshot = state.model_dump()
+
+                            if local_result.get("status") == "completed":
+                                logger.info(f"✅ Automation '{task_name}' is success ✅")
+                                await task.finalize(content=output, state=last_state_snapshot)
+                            else:
+                                err = (
+                                    f"[{task_name}] LocalRunner failed:"
+                                    f" {local_result.get('explanation')}"
+                                )
+                                logger.warning(err)
+                                await task.finalize(
+                                    content=output,
+                                    state=last_state_snapshot,
+                                    error=err,
+                                )
                             return output
                         else:
                             logger.info(f"[{task_name}] Invoking graph with input: {graph_input}")
